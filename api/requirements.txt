@@ -1,3 +1,4 @@
 Flask
 flask-sqlalchemy
-sqlite3
+requests
+bs4

@@ -15,4 +15,3 @@ services:
     container_name: sqlite_db
     volumes:
       - ./db:/data
-    command: sqlite3 /data/database.sqlite
