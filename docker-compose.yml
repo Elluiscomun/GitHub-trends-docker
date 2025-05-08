@@ -1,4 +1,11 @@
 services:
+
+  rabbitmq:
+      image: rabbitmq:4.0-management
+      container_name: rabbitmq
+      ports:
+        - "5672:5672"
+        - "15672:15672"
   api:
     build:
       context: ./api
@@ -9,9 +16,37 @@ services:
       - ./db:/app/db
     environment:
       - DATABASE_URL=sqlite:///app/db/database.sqlite
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+    depends_on:
+      - rabbitmq
 
   db:
     image: nouchka/sqlite3
     container_name: sqlite_db
     volumes:
       - ./db:/data
+
+  worker:
+    build:
+      context: ./api
+    container_name: worker
+    command: ["python", "worker.py"]
+    depends_on:
+      - rabbitmq
+      - db
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - DATABASE_URL=sqlite:///app/db/database.sqlite
+    volumes:
+      - ./db:/app/db
+
+
+
+
+

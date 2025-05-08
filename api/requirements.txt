@@ -2,3 +2,4 @@ Flask
 flask-sqlalchemy
 requests
 bs4
+pika
