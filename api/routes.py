@@ -2,6 +2,7 @@ from flask import request, jsonify
 from rabbitmq import send_to_queue
 from database import get_db
 from utils import fetch_trending_repos
+import json
 
 def register_routes(app):
     @app.route('/')
@@ -46,22 +47,36 @@ def register_routes(app):
             return jsonify({"error": "Request ID not found"}), 404
 
         # Obtiene los repositorios asociados al request_id
-        cursor.execute('SELECT * FROM repositories WHERE request_id = ?', (request_id,))
+        cursor.execute('''
+            SELECT repositories.*, evaluation.evaluation 
+            FROM repositories
+            LEFT JOIN evaluation ON repositories.id = evaluation.repository_id
+            WHERE repositories.request_id = ?
+        ''', (request_id,))
         repositories = cursor.fetchall()
 
         # Si no hay repositorios, el procesamiento aún no está completo
         if not repositories:
-            return jsonify({"request_id": request_id, "status": "Processing", "data": []})
+            return jsonify({"request_id": request_id, "status": "Processed" if request["status"] == 1 else "Processing", "data": []})
+
 
         # Devuelve los datos procesados
-        data = [
-            {
+        data = []
+        for repo in repositories:
+            evaluation = None
+            if repo["evaluation"]:
+                try:
+                    evaluation = json.loads(repo["evaluation"])  # Convierte el texto plano a JSON
+                except json.JSONDecodeError:
+                    evaluation = repo["evaluation"]  # Si falla, deja el texto plano
+
+            data.append({
                 "name": repo["name"],
                 "url": repo["url"],
                 "description": repo["description"],
                 "language": repo["language"],
-                "stars": repo["stars"]
-            }
-            for repo in repositories
-        ]
+                "stars": repo["stars"] if "stars" in repo else None,
+                "evaluation": evaluation
+            })
+            
         return jsonify({"request_id": request_id, "status": "Processed", "data": data})

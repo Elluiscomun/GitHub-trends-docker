@@ -38,11 +38,25 @@ def process_message(ch, method, properties, body):
             INSERT INTO repositories (name, url, description, language, stars, request_id)
             VALUES (?, ?, ?, ?, ?, ?)
         ''', (repo['name'], repo['url'], repo['description'], repo['language'], repo['stars'], request_id))
+    
+    # Cambia el status a 1 en la tabla requests
+    cursor.execute('UPDATE requests SET status = 1 WHERE id = ?', (request_id,))
+    
     connection.commit()
     connection.close()
 
     print(f"Processed request_id: {request_id}")
     ch.basic_ack(delivery_tag=method.delivery_tag)
+
+    evaluation_message = json.dumps({"request_id":  request_id})
+    ch.basic_publish(
+        exchange='',
+        routing_key='evaluation_queue',
+        body=evaluation_message,
+        properties=pika.BasicProperties(
+            delivery_mode=2,  # Make message persistent
+        )
+    )
 
 def start_worker():
     """Inicia el worker de RabbitMQ con lógica de reintento."""

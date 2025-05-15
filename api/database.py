@@ -20,7 +20,8 @@ def init_db():
             language TEXT,
             date_range TEXT,
             user TEXT,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            status INTEGER DEFAULT 0    
         )
     ''')
     db.execute('''
@@ -33,6 +34,16 @@ def init_db():
             stars INTEGER,
             request_id INTEGER,
             FOREIGN KEY (request_id) REFERENCES requests (id)
+        )
+    ''')
+    db.execute('''
+        CREATE TABLE IF NOT EXISTS evaluation (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            request_id INTEGER,
+            repository_id INTEGER,
+            evaluation TEXT,
+            FOREIGN KEY (request_id) REFERENCES requests (id),
+            FOREIGN KEY (repository_id) REFERENCES repositories (id)
         )
     ''')
     db.commit()
