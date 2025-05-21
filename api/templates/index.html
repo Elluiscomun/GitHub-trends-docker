@@ -225,7 +225,7 @@
         
         function checkResults(requestId) {
             const checkInterval = setInterval(() => {
-                fetch(/resultado/${requestId})
+                fetch(`/resultado/${requestId}`)
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === 'Processed' && data.data.length > 0) {
@@ -237,10 +237,10 @@
         }
         
         function displayResults(data) {
-            let html = <h2>Resultados para la solicitud ${data.request_id}</h2>;
+            let html = `<h2>Resultados para la solicitud ${data.request_id}</h2>`;
             
             if (data.data.length === 0) {
-                html += <p>No se encontraron repositorios.</p>;
+                html += `<p>No se encontraron repositorios.</p>`;
             } else {
                 data.data.forEach(repo => {
                     html += `
@@ -253,7 +253,7 @@
                                 <span>Lenguaje: ${repo.language || 'Desconocido'}</span> | 
                                 <span>⭐ ${repo.stars || 0} estrellas</span>
                             </div>
-                            ${repo.evaluation ? <div class="repo-eval"><strong>Evaluación:</strong> ${JSON.stringify(repo.evaluation)}</div> : ''}
+                            ${repo.evaluation ? `<div class="repo-eval"><strong>Evaluación:</strong> ${JSON.stringify(repo.evaluation)}</div>` : ''}
                         </div>
                     `;
                 });
