@@ -100,7 +100,21 @@ def evaluate_repositories(repositories, request_id):
             evaluation = json.dumps(evaluation)  # Convertir a JSON para almacenar
         except json.JSONDecodeError as e:
             print("Error al procesar la respuesta de IA:", e)
-            evaluation = "{ 'error': 'Error al procesar la respuesta' }"
+            try:
+                content = response_ia["choices"][0]["message"]["content"]
+                # Buscar el primer '{'
+                start_idx = content.find("{")
+                # Buscar el último '}' antes de un posible cierre de bloque markdown
+                end_idx = content.rfind("}")
+                if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                    json_str = content[start_idx:end_idx+1]
+                else:
+                    json_str = content
+                evaluation = json.loads(json_str)
+                evaluation = json.dumps(evaluation)  # Convertir a JSON para almacenar
+            except json.JSONDecodeError as e:   
+                print("Error al intentar arreglar la cadena:", e)
+                evaluation = "{ 'error': 'Error al procesar la respuesta' }"
 
         # Guardar la evaluación en la base de datos
         connection = get_db_connection()

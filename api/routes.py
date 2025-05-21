@@ -8,6 +8,10 @@ def register_routes(app):
     @app.route('/home')
     def index():
         return render_template('index.html')
+    
+    @app.route('/solicitud/<int:request_id>')
+    def result(request_id):
+        return render_template('resultado.html', request_id=request_id)
 
     @app.route('/tendencias', methods=['POST'])
     def tendencias():

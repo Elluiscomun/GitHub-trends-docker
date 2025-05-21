@@ -1,0 +1,117 @@
+<!-- resultado.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Resultados de Solicitud</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 0; }
+        .container { max-width: 900px; margin: 30px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 10px #0001; padding: 32px; }
+        h1 { color: #24292e; }
+        .repo { border-bottom: 1px solid #eee; padding: 18px 0; }
+        .repo:last-child { border-bottom: none; }
+        .repo-title { font-size: 1.2em; font-weight: bold; color: #0366d6; margin-bottom: 6px; }
+        .repo-meta { color: #586069; font-size: 0.95em; margin-bottom: 8px; }
+        .repo-desc { margin-bottom: 10px; }
+        .skills-list, .skills-table { margin: 0 0 10px 0; padding: 0; }
+        .skills-list li { margin-bottom: 4px; }
+        .error { color: #b00020; background: #ffeaea; padding: 8px; border-radius: 4px; }
+        .json-block { background: #f6f8fa; border-radius: 4px; padding: 10px; font-family: monospace; font-size: 0.97em; overflow-x: auto; }
+        @media (max-width: 600px) {
+            .container { padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Resultados de la Solicitud #<span id="request-id"></span></h1>
+        <div id="repos"></div>
+    </div>
+    <script>
+        // Cambia el ID aquí para pruebas locales
+        const requestId = window.location.pathname.split('/').pop();
+
+        document.getElementById('request-id').textContent = requestId;
+
+        fetch(`/resultado/${requestId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data.data || data.data.length === 0) {
+                    document.getElementById('repos').innerHTML = '<p>No se encontraron resultados.</p>';
+                    return;
+                }
+                document.getElementById('repos').innerHTML = data.data.map(repo => renderRepo(repo)).join('');
+            })
+            .catch(err => {
+                document.getElementById('repos').innerHTML = `<div class="error">Error al cargar resultados: ${err.message}</div>`;
+            });
+
+        function renderRepo(repo) {
+            return `
+                <div class="repo">
+                    <div class="repo-title">
+                        <a href="${fixUrl(repo.url)}" target="_blank">${repo.name}</a>
+                    </div>
+                    <div class="repo-meta">
+                        Lenguaje: ${repo.language || 'Desconocido'} | ⭐ ${repo.stars ?? 0}
+                    </div>
+                    <div class="repo-desc">${repo.description || 'Sin descripción'}</div>
+                    ${renderEvaluation(repo.evaluation)}
+                </div>
+            `;
+        }
+
+        function renderEvaluation(evaluation) {
+            if (!evaluation) return '';
+            // Si es string, intenta parsear
+            if (typeof evaluation === 'string') {
+                if (evaluation.includes('error')) {
+                    return `<div class="error">${evaluation}</div>`;
+                }
+                try { evaluation = JSON.parse(evaluation); } catch { return `<div class="json-block">${evaluation}</div>`; }
+            }
+            // Buscar arrays de habilidades con diferentes nombres
+            const skillKeys = ['skills', 'detected_skills', 'habilidades', 'habilidades_detectadas', 'Habilidades', 'skillsDetected'];
+            for (const key of skillKeys) {
+                if (Array.isArray(evaluation[key])) {
+                    return `
+                        <div><strong>Habilidades detectadas:</strong>
+                            <ul class="skills-list">
+                                ${evaluation[key].map(skill => typeof skill === 'string'
+                                    ? `<li>${skill}</li>`
+                                    : `<li><strong>${skill.name}:</strong> ${skill.description || ''}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+            }
+            // Si es un objeto complejo, mostrar como JSON
+            return `<div class="json-block">${syntaxHighlight(evaluation)}</div>`;
+        }
+
+        // Corrige URLs mal formateadas
+        function fixUrl(url) {
+            if (!url) return '#';
+            if (url.startsWith('https://github.com/')) return url;
+            if (url.startsWith('https://github.com')) return url.replace('https://github.com', 'https://github.com/');
+            return url;
+        }
+
+        // Formatea JSON bonito
+        function syntaxHighlight(json) {
+            if (typeof json !== 'string') json = JSON.stringify(json, null, 2);
+            return json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|\d+)/g, function (match) {
+                    let cls = 'number';
+                    if (/^"/.test(match)) {
+                        if (/:$/.test(match)) cls = 'key';
+                        else cls = 'string';
+                    } else if (/true|false/.test(match)) cls = 'boolean';
+                    else if (/null/.test(match)) cls = 'null';
+                    return `<span class="${cls}">${match}</span>`;
+                });
+        }
+    </script>
+</body>
+</html>
