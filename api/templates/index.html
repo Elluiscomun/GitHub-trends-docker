@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Identificador de tendencias GitHub</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: #24292e;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 2.2em;
+        }
+        
+        .search-form {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        button {
+            background-color: #2ea44f;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #22863a;
+        }
+        
+        .results {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .repo-card {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .repo-name {
+            color: #0366d6;
+            font-size: 1.2em;
+            margin-bottom: 8px;
+        }
+        
+        .repo-desc {
+            color: #586069;
+            margin-bottom: 10px;
+        }
+        
+        .repo-meta {
+            font-size: 0.9em;
+            color: #586069;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid #2ea44f;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Identificador de tendencias de habilidades GitHub</h1>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="search-form">
+            <form id="trends-form">
+                <div class="form-group">
+                    <label for="language">Lenguaje de programación</label>
+                    <input type="text" id="language" name="language" placeholder="Ej: python, javascript, all para todos">
+                </div>
+                
+                <div class="form-group">
+                    <label for="date_range">Rango de fechas</label>
+                    <select id="date_range" name="date_range">
+                        <option value="daily">Diario</option>
+                        <option value="weekly">Semanal</option>
+                        <option value="monthly">Mensual</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="user">Identificador de usuario</label>
+                    <input type="text" id="user" name="user" placeholder="Tu nombre o ID">
+                </div>
+                
+                <button type="submit">Buscar tendencias</button>
+            </form>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Buscando repositorios...</p>
+        </div>
+        
+        <div class="results" id="results">
+            <!-- Los resultados se mostrarán aquí -->
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('trends-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const language = document.getElementById('language').value || 'all';
+            const date_range = document.getElementById('date_range').value;
+            const user = document.getElementById('user').value || 'anonymous';
+            
+            // Mostrar loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').innerHTML = '';
+            
+            // Enviar solicitud al backend
+            fetch('/tendencias', {  // Usa rutas relativas (ya que Flask las maneja)
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    language: document.getElementById('language').value,
+                    date_range: document.getElementById('date_range').value,
+                    user: document.getElementById('user').value || 'anonymous'
+                })
+            })
+            
+            .then(response => response.json())
+            .then(data => {
+                // Ocultar loading
+                document.getElementById('loading').style.display = 'none';
+                
+                if (data.error) {
+                    document.getElementById('results').innerHTML = `
+                        <div class="error">${data.error}</div>
+                    `;
+                    return;
+                }
+                
+                // Mostrar el ID de la solicitud
+                document.getElementById('results').innerHTML = `
+                    <h2>Solicitud recibida</h2>
+                    <p>ID de solicitud: ${data.request_id}</p>
+                    <p>Puedes ver los resultados en: <a href="/resultado/${data.request_id}">/resultado/${data.request_id}</a></p>
+                `;
+                
+                // Opcional: Hacer polling para verificar cuando estén listos los resultados
+                checkResults(data.request_id);
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('results').innerHTML = `
+                    <div class="error">Error al procesar la solicitud: ${error.message}</div>
+                `;
+            });
+        });
+        
+        function checkResults(requestId) {
+            const checkInterval = setInterval(() => {
+                fetch(/resultado/${requestId})
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'Processed' && data.data.length > 0) {
+                            clearInterval(checkInterval);
+                            displayResults(data);
+                        }
+                    });
+            }, 3000); // Verificar cada 3 segundos
+        }
+        
+        function displayResults(data) {
+            let html = <h2>Resultados para la solicitud ${data.request_id}</h2>;
+            
+            if (data.data.length === 0) {
+                html += <p>No se encontraron repositorios.</p>;
+            } else {
+                data.data.forEach(repo => {
+                    html += `
+                        <div class="repo-card">
+                            <div class="repo-name">
+                                <a href="${repo.url}" target="_blank">${repo.name}</a>
+                            </div>
+                            <div class="repo-desc">${repo.description || 'Sin descripción'}</div>
+                            <div class="repo-meta">
+                                <span>Lenguaje: ${repo.language || 'Desconocido'}</span> | 
+                                <span>⭐ ${repo.stars || 0} estrellas</span>
+                            </div>
+                            ${repo.evaluation ? <div class="repo-eval"><strong>Evaluación:</strong> ${JSON.stringify(repo.evaluation)}</div> : ''}
+                        </div>
+                    `;
+                });
+            }
+            
+            document.getElementById('results').innerHTML = html;
+        }
+    </script>
+</body>
+</html>

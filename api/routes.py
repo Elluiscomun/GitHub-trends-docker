@@ -1,13 +1,13 @@
-from flask import request, jsonify
+from flask import request, jsonify, render_template
 from rabbitmq import send_to_queue
 from database import get_db
 from utils import fetch_trending_repos
 import json
 
 def register_routes(app):
-    @app.route('/')
+    @app.route('/home')
     def index():
-        return "Welcome to the SQLite API!"
+        return render_template('index.html')
 
     @app.route('/tendencias', methods=['POST'])
     def tendencias():
