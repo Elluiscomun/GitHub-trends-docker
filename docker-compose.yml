@@ -60,7 +60,7 @@ services:
       - RABBITMQ_USER=guest
       - RABBITMQ_PASSWORD=guest
       - DATABASE_URL=sqlite:///app/db/database.sqlite
-      - OPENROUTER_API_KEY=
+      - OPENROUTER_API_KEY=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
     volumes:
       - ./db:/app/db
 

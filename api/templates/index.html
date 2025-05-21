@@ -211,6 +211,9 @@
                     <p>ID de solicitud: ${data.request_id}</p>
                     <p>Puedes ver los resultados en: <a href="/resultado/${data.request_id}">/resultado/${data.request_id}</a></p>
                 `;
+
+                // Abrir nueva pestaña con la URL de la solicitud
+                window.open(`http://localhost:5000/solicitud/${data.request_id}`, '_blank');
                 
                 // Opcional: Hacer polling para verificar cuando estén listos los resultados
                 checkResults(data.request_id);
