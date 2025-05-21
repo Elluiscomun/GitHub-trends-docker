@@ -47,17 +47,26 @@ def evaluate_repositories(repositories, request_id):
         url = f"https://api.github.com/repos/{repo[1]}/readme"
         headers = {"Accept": "application/vnd.github.v3.raw"}
 
-        response = requests.get(url, headers=headers)
-        if response.status_code != 200:
-            print("Error al obtener README:", response.status_code)
-            exit()
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code != 200:
+                print("Error al obtener README:", response.status_code, repo[1])
+                continue  # Salta este repo y sigue con el siguiente
+        except requests.exceptions.RequestException as e:
+            print(f"Error de conexión al obtener README de {repo[1]}: {e}")
+            continue  # Salta este repo y sigue con el siguiente
 
         readme = response.text
 
-        # 🧠 Pregunta para el modelo
+        # Limitar el tamaño del README para evitar exceder el contexto máximo
+        MAX_README_CHARS = 20000 
+        if len(readme) > MAX_README_CHARS:
+            readme = readme[:MAX_README_CHARS]
+
+        # Pregunta para el modelo
         pregunta = "devuelme un json con resumen de habilidades detectadas"
 
-        # ✉️ Construcción del mensaje para el LLM
+        # Construcción del mensaje para el LLM
         mensajes = [
             {"role": "system", "content": "Eres un experto en análisis de proyectos de software."},
             {"role": "user", "content": f"Aquí está el README de un proyecto:\n\n{readme}"},
@@ -83,14 +92,15 @@ def evaluate_repositories(repositories, request_id):
         else:
             print("Error al llamar a OpenRouter:", respuesta.status_code)
             print(respuesta.text)
-            return
+            continue
 
         try:
+            print(response_ia)
             evaluation = json.loads(response_ia["choices"][0]["message"]["content"])
             evaluation = json.dumps(evaluation)  # Convertir a JSON para almacenar
-        except Exception as e:
+        except json.JSONDecodeError as e:
             print("Error al procesar la respuesta de IA:", e)
-            evaluation = ""
+            evaluation = "{ 'error': 'Error al procesar la respuesta' }"
 
         # Guardar la evaluación en la base de datos
         connection = get_db_connection()
